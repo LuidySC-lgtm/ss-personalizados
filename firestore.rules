@@ -35,10 +35,11 @@ service cloud.firestore {
     }
 
     function isValidProject(data) {
-      return data.keys().hasOnly(['name', 'canvaUrl', 'userId', 'createdAt', 'code']) &&
+      return data.keys().hasAll(['name', 'canvaUrl', 'userId', 'createdAt']) &&
+             data.keys().hasOnly(['name', 'canvaUrl', 'userId', 'createdAt', 'code']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.canvaUrl is string && data.canvaUrl.matches("^https://.*") && data.canvaUrl.size() < 2048 &&
-             data.code is string && data.code.size() == 6 &&
+             (!('code' in data) || (data.code is string && (data.code.size() == 6 || data.code.size() == 9))) &&
              data.userId is string && data.userId == 'public-user-ss' &&
              data.createdAt is timestamp;
     }
