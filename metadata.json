@@ -1,0 +1,5 @@
+{
+  "name": "SS Personalizado",
+  "description": "Sistema de gerenciamento de links do Canva para papelaria, com salvamento em tempo real no Firebase e design profissional.",
+  "requestFramePermissions": []
+}
