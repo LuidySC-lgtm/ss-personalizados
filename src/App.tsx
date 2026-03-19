@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
@@ -98,17 +97,27 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 // --- Error Boundary ---
-class ErrorBoundary extends React.Component<any, any> {
-  constructor(props: any) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       let errorMessage = "Ocorreu um erro inesperado.";
       try {
@@ -135,7 +144,7 @@ class ErrorBoundary extends React.Component<any, any> {
         </div>
       );
     }
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
@@ -150,18 +159,20 @@ interface Project {
 }
 
 // --- Components ---
-const ProjectCard = ({ 
+interface ProjectCardProps {
+  project: Project;
+  onDelete: (id: string) => void | Promise<void>;
+  onUpdate: (id: string, updates: Partial<Project>) => Promise<void>;
+  viewMode: 'grid' | 'list';
+  theme: 'dark' | 'light';
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
   project, 
   onDelete, 
   onUpdate,
   viewMode,
   theme
-}: { 
-  project: Project, 
-  onDelete: (id: string) => void | Promise<void>, 
-  onUpdate: (id: string, updates: Partial<Project>) => Promise<void>,
-  viewMode: 'grid' | 'list',
-  theme: 'dark' | 'light'
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(project.name);
