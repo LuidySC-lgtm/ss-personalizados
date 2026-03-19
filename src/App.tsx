@@ -153,28 +153,42 @@ interface Project {
 const ProjectCard = ({ 
   project, 
   onDelete, 
-  onUpdateName,
+  onUpdate,
   viewMode,
   theme
 }: { 
   project: Project, 
   onDelete: (id: string) => void | Promise<void>, 
-  onUpdateName: (id: string, newName: string) => Promise<void>,
+  onUpdate: (id: string, updates: Partial<Project>) => Promise<void>,
   viewMode: 'grid' | 'list',
   theme: 'dark' | 'light'
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(project.name);
+  const [editedUrl, setEditedUrl] = useState(project.canvaUrl);
 
   const handleSave = async () => {
+    const updates: Partial<Project> = {};
     if (editedName.trim() && editedName !== project.name) {
-      await onUpdateName(project.id, editedName);
+      updates.name = editedName;
+    }
+    if (editedUrl.trim() && editedUrl !== project.canvaUrl) {
+      if (!editedUrl.startsWith('https://')) {
+        alert('O link deve começar com https://');
+        return;
+      }
+      updates.canvaUrl = editedUrl;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await onUpdate(project.id, updates);
     }
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditedName(project.name);
+    setEditedUrl(project.canvaUrl);
     setIsEditing(false);
   };
 
@@ -192,62 +206,74 @@ const ProjectCard = ({
             <Palette className="w-5 h-5 text-[#C5A059]" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1">
               {isEditing ? (
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex flex-col gap-2 flex-1">
                   <input 
                     autoFocus
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                    className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-2 py-0.5 text-sm w-full focus:outline-none`}
+                    placeholder="Nome do projeto"
+                    className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-2 py-1 text-sm w-full focus:outline-none`}
                   />
-                  <button onClick={handleSave} className="text-emerald-500 hover:text-emerald-400"><Check className="w-4 h-4" /></button>
-                  <button onClick={handleCancel} className={`${theme === 'dark' ? 'text-white/20 hover:text-white' : 'text-black/20 hover:text-black'}`}><X className="w-4 h-4" /></button>
+                  <input 
+                    value={editedUrl}
+                    onChange={(e) => setEditedUrl(e.target.value)}
+                    placeholder="Link do Canva"
+                    className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-2 py-1 text-xs w-full focus:outline-none font-mono`}
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleSave} className="text-emerald-500 hover:text-emerald-400 flex items-center gap-1 text-xs"><Check className="w-4 h-4" /> Salvar</button>
+                    <button onClick={handleCancel} className={`${theme === 'dark' ? 'text-white/20 hover:text-white' : 'text-black/20 hover:text-black'} flex items-center gap-1 text-xs`}><X className="w-4 h-4" /> Cancelar</button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <h3 className={`${theme === 'dark' ? 'text-white' : 'text-black'} font-medium text-base truncate`}>{project.name}</h3>
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-white/20' : 'text-black/20'} hover:text-[#C5A059]`}
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <h3 className={`${theme === 'dark' ? 'text-white' : 'text-black'} font-medium text-base truncate`}>{project.name}</h3>
+                    <button 
+                      onClick={() => setIsEditing(true)}
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-white/20' : 'text-black/20'} hover:text-[#C5A059]`}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className={`${theme === 'dark' ? 'text-white/40' : 'text-black/40'} flex items-center gap-1.5 text-[10px] uppercase tracking-widest`}>
+                      <Calendar className="w-3 h-3" />
+                      {project.createdAt.toDate().toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[#C5A059]/60 text-[10px] uppercase tracking-widest font-mono">
+                      <Hash className="w-3 h-3" />
+                      {project.code || '---'}
+                    </div>
+                  </div>
                 </>
               )}
-            </div>
-            <div className="flex items-center gap-4 mt-0.5">
-              <div className={`${theme === 'dark' ? 'text-white/40' : 'text-black/40'} flex items-center gap-1.5 text-[10px] uppercase tracking-widest`}>
-                <Calendar className="w-3 h-3" />
-                {project.createdAt.toDate().toLocaleDateString('pt-BR')}
-              </div>
-              <div className="flex items-center gap-1.5 text-[#C5A059]/60 text-[10px] uppercase tracking-widest font-mono">
-                <Hash className="w-3 h-3" />
-                {project.code || '---'}
-              </div>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-3 ml-4">
-          <a 
-            href={project.canvaUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-[#C5A059]/10 text-[#C5A059] p-2.5 rounded-lg hover:bg-[#C5A059] hover:text-black transition-all active:scale-95"
-            title="Abrir no Canva"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-          <button 
-            onClick={() => onDelete(project.id)}
-            className={`${theme === 'dark' ? 'text-white/20' : 'text-black/20'} hover:text-red-500 transition-colors p-2.5`}
-            title="Excluir"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {!isEditing && (
+          <div className="flex items-center gap-3 ml-4">
+            <a 
+              href={project.canvaUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-[#C5A059]/10 text-[#C5A059] p-2.5 rounded-lg hover:bg-[#C5A059] hover:text-black transition-all active:scale-95"
+              title="Abrir no Canva"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            <button 
+              onClick={() => onDelete(project.id)}
+              className={`${theme === 'dark' ? 'text-white/20' : 'text-black/20'} hover:text-red-500 transition-colors p-2.5`}
+              title="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </motion.div>
     );
   }
@@ -264,7 +290,7 @@ const ProjectCard = ({
         <button 
           onClick={() => setIsEditing(true)}
           className={`${theme === 'dark' ? 'text-white/20 bg-black/50' : 'text-black/20 bg-white/50'} hover:text-[#C5A059] transition-colors p-1.5 backdrop-blur-md rounded-full`}
-          title="Editar nome"
+          title="Editar projeto"
         >
           <Edit2 className="w-4 h-4" />
         </button>
@@ -283,41 +309,57 @@ const ProjectCard = ({
         </div>
         
         {isEditing ? (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="space-y-3 mb-6">
             <input 
               autoFocus
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-2 py-1 text-lg w-full focus:outline-none`}
+              placeholder="Nome do projeto"
+              className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-3 py-2 text-base w-full focus:outline-none`}
             />
-            <button onClick={handleSave} className="text-emerald-500 hover:text-emerald-400"><Check className="w-5 h-5" /></button>
+            <input 
+              value={editedUrl}
+              onChange={(e) => setEditedUrl(e.target.value)}
+              placeholder="Link do Canva"
+              className={`${theme === 'dark' ? 'bg-white/5 text-white' : 'bg-black/5 text-black'} border border-[#C5A059]/30 rounded px-3 py-2 text-xs w-full focus:outline-none font-mono`}
+            />
+            <div className="flex gap-2 pt-2">
+              <button onClick={handleSave} className="flex-1 bg-emerald-500/20 text-emerald-500 py-2 rounded-lg hover:bg-emerald-500 hover:text-white transition-all text-xs font-bold flex items-center justify-center gap-1">
+                <Check className="w-4 h-4" /> SALVAR
+              </button>
+              <button onClick={handleCancel} className={`flex-1 ${theme === 'dark' ? 'bg-white/5 text-white/40' : 'bg-black/5 text-black/40'} py-2 rounded-lg hover:bg-red-500/20 hover:text-red-500 transition-all text-xs font-bold flex items-center justify-center gap-1`}>
+                <X className="w-4 h-4" /> CANCELAR
+              </button>
+            </div>
           </div>
         ) : (
-          <h3 className={`${theme === 'dark' ? 'text-white' : 'text-black'} font-light text-xl mb-2 line-clamp-2 leading-tight tracking-tight`}>{project.name}</h3>
+          <>
+            <h3 className={`${theme === 'dark' ? 'text-white' : 'text-black'} font-light text-xl mb-2 line-clamp-2 leading-tight tracking-tight`}>{project.name}</h3>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-8">
+              <div className={`${theme === 'dark' ? 'text-white/30' : 'text-black/30'} flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]`}>
+                <Calendar className="w-3 h-3" />
+                {project.createdAt.toDate().toLocaleDateString('pt-BR')}
+              </div>
+              <div className="flex items-center gap-2 text-[#C5A059]/50 text-[10px] uppercase tracking-[0.2em] font-mono">
+                <Hash className="w-3 h-3" />
+                {project.code || '---'}
+              </div>
+            </div>
+          </>
         )}
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-8">
-          <div className={`${theme === 'dark' ? 'text-white/30' : 'text-black/30'} flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]`}>
-            <Calendar className="w-3 h-3" />
-            {project.createdAt.toDate().toLocaleDateString('pt-BR')}
-          </div>
-          <div className="flex items-center gap-2 text-[#C5A059]/50 text-[10px] uppercase tracking-[0.2em] font-mono">
-            <Hash className="w-3 h-3" />
-            {project.code || '---'}
-          </div>
-        </div>
       </div>
       
-      <a 
-        href={project.canvaUrl} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="w-full border border-[#C5A059]/30 text-[#C5A059] py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:bg-[#C5A059] hover:text-black transition-all active:scale-95 tracking-wide"
-      >
-        <ExternalLink className="w-4 h-4" />
-        ABRIR NO CANVA
-      </a>
+      {!isEditing && (
+        <a 
+          href={project.canvaUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-full border border-[#C5A059]/30 text-[#C5A059] py-3.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:bg-[#C5A059] hover:text-black transition-all active:scale-95 tracking-wide"
+        >
+          <ExternalLink className="w-4 h-4" />
+          ABRIR NO CANVA
+        </a>
+      )}
     </motion.div>
   );
 };
@@ -407,10 +449,10 @@ const AppContent = () => {
     }
   };
 
-  const handleUpdateProjectName = async (id: string, newName: string) => {
+  const handleUpdateProject = async (id: string, updates: Partial<Project>) => {
     try {
-      await updateDoc(doc(db, 'projects', id), { name: newName });
-      setFeedback({ type: 'success', message: 'Nome atualizado.' });
+      await updateDoc(doc(db, 'projects', id), updates);
+      setFeedback({ type: 'success', message: 'Projeto atualizado.' });
       setTimeout(() => setFeedback(null), 3000);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `projects/${id}`);
@@ -524,7 +566,7 @@ const AppContent = () => {
                 key={project.id} 
                 project={project} 
                 onDelete={handleDeleteProject} 
-                onUpdateName={handleUpdateProjectName}
+                onUpdate={handleUpdateProject}
                 viewMode={viewMode}
                 theme={theme}
               />
